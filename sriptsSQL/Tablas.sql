@@ -1,0 +1,108 @@
+CREATE TABLE USUARIOS (
+NOMBRE VARCHAR2(25) NOT NULL,
+APELLIDOS VARCHAR2(50) NOT NULL,
+NIF VARCHAR2(10) NOT NULL UNIQUE,
+FECHA_NACIMIENTO DATE,
+EMAIL VARCHAR2(30) UNIQUE,
+TELEFONO VARCHAR2(9) NOT NULL,
+PROVINCIA VARCHAR2(30),
+DIRECCION VARCHAR2(60),
+NICK VARCHAR2(20) NOT NULL UNIQUE,
+PASS VARCHAR2(75) NOT NULL,
+PUESTO VARCHAR2(15) CHECK ( PUESTO IN ('RESERVAS','ALMACEN', 'GERENTE') ) NOT NULL,
+OID_USUARIO INTEGER NOT NULL,
+PRIMARY KEY (OID_USUARIO) 
+);
+
+
+
+
+
+
+
+
+
+
+CREATE TABLE Clientes (
+OID_C INTEGER NOT NULL,
+Nombre VARCHAR2(30) NOT NULL,
+Apellidos VARCHAR2(50) NOT NULL,
+Telefono CHAR(9) NOT NULL,
+PRIMARY KEY(OID_C),
+UNIQUE(Nombre, Apellidos, Telefono)
+);
+
+CREATE TABLE PeticionesReserva (
+OID_PR INTEGER NOT NULL,
+fechaYHoraReserva TIMESTAMP NOT NULL,
+numPersonas SMALLINT NOT NULL,
+ubicacionMesa CHAR(8) CHECK(ubicacionMesa IN ('interior', 'exterior')),
+tipoMesa VARCHAR2(11) CHECK (tipoMesa IN ('fumadores', 'noFumadores')),
+OID_C INTEGER NOT NULL,
+PRIMARY KEY (OID_PR),
+FOREIGN KEY (OID_C) REFERENCES Clientes 
+);
+ 
+CREATE TABLE Mesas (
+OID_M INTEGER NOT NULL,
+maxPersonas SMALLINT NOT NULL,
+ubicacion CHAR(8) CHECK(ubicacion IN ('interior', 'exterior')) NOT NULL,
+tipo VARCHAR2(11) CHECK (tipo IN ('fumadores', 'noFumadores')) NOT NULL,
+numMesasConcretas SMALLINT  DEFAULT 0 NOT NULL,
+PRIMARY KEY (OID_M),
+UNIQUE (maxPersonas, ubicacion, tipo)
+);
+
+CREATE TABLE MesasConcretas (
+identificador INTEGER NOT NULL,
+OID_M INTEGER NOT NULL,
+PRIMARY KEY (identificador),
+FOREIGN KEY (OID_M) REFERENCES Mesas
+);
+
+CREATE TABLE Reservas (
+codigo VARCHAR2(6)  NOT NULL,
+fechaYHora TIMESTAMP NOT NULL,
+identificador INTEGER NOT NULL,
+OID_C INTEGER NOT NULL,
+PRIMARY KEY (codigo),
+UNIQUE (fechaYHora, identificador),
+FOREIGN KEY (identificador) REFERENCES MesasConcretas,
+FOREIGN KEY (OID_C) REFERENCES Clientes 
+);
+
+CREATE TABLE Facturas (
+codigoFactura VARCHAR2(6) NOT NULL,
+fechaElaboracion DATE NOT NULL,
+cuantiaFija NUMBER DEFAULT 10.00 NOT NULL,
+codigo VARCHAR2(6),
+PRIMARY KEY (codigoFactura),
+FOREIGN KEY (codigo) REFERENCES Reservas  ON DELETE CASCADE
+
+);
+
+CREATE TABLE Platos (
+nombre VARCHAR2(60) NOT NULL,
+precioMediaRacion NUMBER(*,2),
+precioRacion  NUMBER(*,2) NOT NULL,
+PRIMARY KEY (nombre)
+);
+
+CREATE TABLE Pedidos (
+codigoPedido VARCHAR2(6) NOT NULL,
+OID_PR INTEGER NOT NULL UNIQUE,
+codigoFactura VARCHAR2(8) NOT NULL UNIQUE,
+PRIMARY KEY (codigoPedido),
+FOREIGN KEY (OID_PR) REFERENCES PeticionesReserva ON DELETE CASCADE,
+FOREIGN KEY (codigoFactura) REFERENCES Facturas ON DELETE CASCADE
+);
+
+CREATE TABLE LineasDePedido (
+codigoPedido VARCHAR2(6) NOT NULL,
+nombre VARCHAR(60) NOT NULL,
+racionPedida VARCHAR2(8) CHECK (racionPedida IN ('media', 'completa')) NOT NULL,
+unidadesPedidas SMALLINT NOT NULL,
+PRIMARY KEY (codigoPedido, nombre, racionPedida),
+FOREIGN KEY (codigoPedido) REFERENCES Pedidos ON DELETE CASCADE,
+FOREIGN KEY (nombre) REFERENCES Platos
+);
